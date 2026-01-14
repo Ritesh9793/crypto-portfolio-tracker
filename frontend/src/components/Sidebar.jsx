@@ -47,7 +47,7 @@ export default function Sidebar() {
       <div className="flex items-center justify-between py-6">
         {isOpen && (
           <h1 className="text-2xl font-bold text-white tracking-wide">
-            <span className="text-blue-500">Crypto</span>Tracker
+            <span className="text-pink-500">Crypto</span>Tracker
           </h1>
         )}
 
@@ -71,7 +71,7 @@ export default function Sidebar() {
               className={`
                 flex items-center gap-4 p-3 rounded-xl transition-all duration-300
                 ${active
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40 scale-[1.03]"
+                  ? "bg-pink-600/45 text-white shadow-lg shadow-pink-500/40 scale-[1.03]"
                   : "text-gray-300 hover:bg-white/10 hover:scale-[1.02] hover:shadow-md"
                 }
               `}
