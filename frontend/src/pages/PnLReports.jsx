@@ -14,7 +14,9 @@ import {
 
 export default function PnLReport() {
   const [summary, setSummary] = useState(null);
+  const [taxSummary, setTaxSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [taxLoading, setTaxLoading] = useState(true);
 
   useEffect(() => {
     api
@@ -22,6 +24,12 @@ export default function PnLReport() {
       .then((res) => setSummary(res.data))
       .catch((err) => console.error("PnL fetch error", err))
       .finally(() => setLoading(false));
+
+    api
+      .get("/tax/hints")
+      .then((res) => setTaxSummary(res.data))
+      .catch((err) => console.error("Tax hints fetch error", err))
+      .finally(() => setTaxLoading(false));
   }, []);
 
   /* ---------------- EXPORT CSV ---------------- */
@@ -183,7 +191,7 @@ export default function PnLReport() {
         </div>
 
         {/* TABLE */}
-        <div className="glass-card p-6 rounded-2xl border border-white/10 shadow-xl">
+        <div className="glass-card p-6 rounded-2xl border border-white/10 shadow-xl mb-10">
           <table className="w-full text-left">
             <thead>
               <tr className="text-gray-300 border-b border-white/10 uppercase text-sm">
@@ -239,6 +247,149 @@ export default function PnLReport() {
             </tbody>
           </table>
         </div>
+
+        {/* TAX HINTS SECTION */}
+        {!taxLoading && taxSummary && (
+          <div className="glass-card p-6 rounded-2xl border border-white/10 shadow-xl mb-10">
+            <h2 className="text-2xl font-semibold mb-6">
+              💰 Tax Hints & Analysis
+            </h2>
+
+            {/* Tax Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
+                <p className="text-gray-400 text-sm mb-1">Total Realized Gains</p>
+                <p className={`text-xl font-bold ${
+                  taxSummary.totalRealizedGains >= 0 ? "text-green-400" : "text-red-400"
+                }`}>
+                  ₹{taxSummary.totalRealizedGains.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20">
+                <p className="text-gray-400 text-sm mb-1">Estimated Tax</p>
+                <p className="text-xl font-bold text-red-400">
+                  ₹{taxSummary.totalEstimatedTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="bg-orange-500/10 p-4 rounded-lg border border-orange-500/20">
+                <p className="text-gray-400 text-sm mb-1">Short-term Gains</p>
+                <p className="text-xl font-bold text-orange-400">
+                  ₹{taxSummary.shortTermGains.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Tax: ₹{taxSummary.shortTermTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</p>
+              </div>
+
+              <div className="bg-purple-500/10 p-4 rounded-lg border border-purple-500/20">
+                <p className="text-gray-400 text-sm mb-1">Long-term Gains</p>
+                <p className="text-xl font-bold text-purple-400">
+                  ₹{taxSummary.longTermGains.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Tax: ₹{taxSummary.longTermTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            {taxSummary.recommendations && taxSummary.recommendations.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">📋 Recommendations</h3>
+                <div className="space-y-2">
+                  {taxSummary.recommendations.map((rec, index) => (
+                    <div
+                      key={index}
+                      className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-sm"
+                    >
+                      <span className="text-yellow-400">💡</span> {rec}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tax Hints Table */}
+            {taxSummary.hints && taxSummary.hints.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">📊 Tax Details by Asset</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-gray-300 border-b border-white/10 uppercase text-xs">
+                        <th className="pb-3">Asset</th>
+                        <th className="pb-3">Gain</th>
+                        <th className="pb-3">Estimated Tax</th>
+                        <th className="pb-3">Holding Period</th>
+                        <th className="pb-3">Days Held</th>
+                        <th className="pb-3">Hint</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {taxSummary.hints.map((hint, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-white/5 hover:bg-white/5 transition-all"
+                        >
+                          <td className="py-3 font-semibold">{hint.symbol}</td>
+                          <td
+                            className={
+                              hint.realizedGain >= 0
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }
+                          >
+                            ₹{hint.realizedGain.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="text-red-400">
+                            ₹{hint.estimatedTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                          </td>
+                          <td>
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                hint.holdingPeriod === "LONG_TERM"
+                                  ? "bg-purple-500/20 text-purple-400"
+                                  : "bg-orange-500/20 text-orange-400"
+                              }`}
+                            >
+                              {hint.holdingPeriod === "LONG_TERM" ? "Long-term" : "Short-term"}
+                            </span>
+                          </td>
+                          <td className="text-gray-400">{hint.daysHeld} days</td>
+                          <td className="text-gray-300 text-sm max-w-xs">
+                            <span
+                              className={`${
+                                hint.hintType === "WARNING"
+                                  ? "text-red-400"
+                                  : hint.hintType === "OPTIMIZATION"
+                                  ? "text-yellow-400"
+                                  : "text-blue-400"
+                              }`}
+                            >
+                              {hint.hint}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {(!taxSummary.hints || taxSummary.hints.length === 0) && (
+              <div className="text-center py-8 text-gray-400">
+                No tax hints available. Realize some gains to see tax analysis.
+              </div>
+            )}
+          </div>
+        )}
+
+        {taxLoading && (
+          <div className="glass-card p-6 rounded-2xl border border-white/10 shadow-xl">
+            <div className="text-center py-8 text-gray-400">
+              Loading tax hints...
+            </div>
+          </div>
+        )}
 
       </div>
     </DashboardLayout>
